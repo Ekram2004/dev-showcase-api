@@ -11,6 +11,10 @@ const { pool } = require("./config/db");
 // Routes
 const authRoutes = require("./routes/v1/auth");
 const usersRoutes = require("./routes/v1/users");
+const skillRoutes = require('./routes/v1/skills');
+const userSkillRoutes = require('./routes/v1/userSkills');
+const inquiryRoutes = require('./routes/v1/inquiries');
+
 
 const app = express();
 
@@ -37,7 +41,9 @@ app.get("/health", async (req, res) => {
 // Mount API routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", usersRoutes);
-
+app.use("/api/v1/skills", skillRoutes);
+app.use('/api/v1/userSkills', userSkillRoutes);
+app.use('/api/v1/inquiries', inquiryRoutes);
 // 404 fallback
 app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });
