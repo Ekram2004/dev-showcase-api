@@ -3,8 +3,8 @@ const express = require("express");
 const router = express.Router();
 const { query } = require("../../config/db");
 const { body, validationResult } = require("express-validator");
-const authenticateToken = require("../../middleware/authenticateToken");
-const authorizeRole = require("../../middleware/authorizeRole");
+const authenticateToken = require("../../middleware/autonticateToken");
+const authorizeRole = require("../../middleware/authorizeToken");
 const authorizeOwnership = require("../../middleware/authorizeOwnership"); // Reusing for inquiry receiver
 
 // Helper for validation errors
@@ -65,19 +65,17 @@ router.post(
 
       const newInquiry = await query(
         "INSERT INTO inquiries (sender_id, receiver_id, subject, message) VALUES ($1, $2, $3, $4) RETURNING *",
-        [senderId, receiver_id, subject, message]
+        [senderId, receiver_id, subject, message],
       );
 
-      res
-        .status(201)
-        .json({
-          message: "Inquiry sent successfully.",
-          inquiry: newInquiry.rows[0],
-        });
+      res.status(201).json({
+        message: "Inquiry sent successfully.",
+        inquiry: newInquiry.rows[0],
+      });
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // --- GET /api/v1/inquiries/received --- (Authenticated: Get all inquiries received by the current user)
@@ -90,7 +88,7 @@ router.get("/received", authenticateToken, async (req, res, next) => {
        JOIN users u ON i.sender_id = u.id
        WHERE i.receiver_id = $1
        ORDER BY i.sent_at DESC`,
-      [userId]
+      [userId],
     );
     res.json(receivedInquiries.rows);
   } catch (error) {
@@ -108,7 +106,7 @@ router.get("/sent", authenticateToken, async (req, res, next) => {
        JOIN users u ON i.receiver_id = u.id
        WHERE i.sender_id = $1
        ORDER BY i.sent_at DESC`,
-      [userId]
+      [userId],
     );
     res.json(sentInquiries.rows);
   } catch (error) {
@@ -131,7 +129,7 @@ router.get(
        LEFT JOIN users su ON i.sender_id = su.id
        LEFT JOIN users ru ON i.receiver_id = ru.id
        WHERE i.id = $1`,
-        [id]
+        [id],
       );
       if (inquiry.rows.length === 0) {
         const notFoundError = new Error("Inquiry not found.");
@@ -142,7 +140,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // --- PUT /api/v1/inquiries/:id/read-status --- (Authenticated, Owner/Admin: Mark inquiry as read/unread)
@@ -164,7 +162,7 @@ router.put(
     try {
       const updatedInquiry = await query(
         "UPDATE inquiries SET read_status = $1 WHERE id = $2 RETURNING *",
-        [read_status, id]
+        [read_status, id],
       );
       if (updatedInquiry.rows.length === 0) {
         const notFoundError = new Error("Inquiry not found.");
@@ -178,7 +176,7 @@ router.put(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // --- DELETE /api/v1/inquiries/:id --- (Authenticated, Owner/Admin: Delete an inquiry)
@@ -192,7 +190,7 @@ router.delete(
     try {
       const deletedInquiry = await query(
         "DELETE FROM inquiries WHERE id = $1 RETURNING id",
-        [id]
+        [id],
       );
       if (deletedInquiry.rows.length === 0) {
         const notFoundError = new Error("Inquiry not found.");
@@ -203,7 +201,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // --- ADMIN ONLY: GET /api/v1/inquiries --- (Admin Only: Get all inquiries)
@@ -218,13 +216,13 @@ router.get(
        FROM inquiries i
        LEFT JOIN users su ON i.sender_id = su.id
        LEFT JOIN users ru ON i.receiver_id = ru.id
-       ORDER BY i.sent_at DESC`
+       ORDER BY i.sent_at DESC`,
       );
       res.json(allInquiries.rows);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 module.exports = router;
